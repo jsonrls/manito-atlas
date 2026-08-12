@@ -8,7 +8,7 @@ import {
   setWorkerUrl,
   type MapLayerMouseEvent,
 } from 'maplibre-gl'
-import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import {
   useEffect,
   useMemo,
