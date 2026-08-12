@@ -25,8 +25,8 @@ export default function Root() {
     const isMap = experience === 'map'
     document.documentElement.classList.toggle('is-map', isMap)
     document.title = isMap
-      ? 'Explore Manito · Barangay Intelligence Map'
-      : 'Manito · Barangay Intelligence Map'
+      ? 'Explore · Manito Atlas'
+      : 'Manito Atlas · Barangay Intelligence Map'
 
     if (!isMap) {
       window.requestAnimationFrame(() => window.scrollTo({ top: 0 }))
@@ -83,7 +83,7 @@ function MapLaunchScreen() {
       <div className="map-launch__grid" aria-hidden="true" />
       <span className="loading-orbit" aria-hidden="true" />
       <span>
-        <small>Opening municipal atlas</small>
+        <small>Opening Manito Atlas</small>
         <strong>Preparing the map workspace…</strong>
       </span>
     </main>

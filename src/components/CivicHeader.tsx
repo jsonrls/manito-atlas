@@ -34,7 +34,7 @@ export function CivicHeader({
         className="brand-lockup"
         type="button"
         onClick={onOpenLanding}
-        aria-label="Return to the Manito landing page"
+        aria-label="Return to the Manito Atlas landing page"
         title="Return to landing page"
       >
         <span className="brand-mark" aria-hidden="true">
@@ -42,7 +42,7 @@ export function CivicHeader({
           <span className="brand-mark__dot" />
         </span>
         <span className="brand-copy">
-          <strong>Manito, Albay</strong>
+          <strong>Manito Atlas</strong>
           <span>Barangay Intelligence Map</span>
         </span>
       </button>
