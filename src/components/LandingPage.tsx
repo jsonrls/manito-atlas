@@ -214,7 +214,7 @@ export function LandingPage({ onOpenMap, onPrefetchMap }: LandingPageProps) {
               <span className="brand-mark__dot" />
             </span>
             <span className="brand-copy">
-              <strong>Manito, Albay</strong>
+              <strong>Manito Atlas</strong>
               <span>Barangay Intelligence Map</span>
             </span>
           </a>

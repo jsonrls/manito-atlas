@@ -213,7 +213,7 @@ function App({ initialBarangayCode, onOpenLanding }: AppProps) {
         onAboutData={() => openPanel('data')}
       />
 
-      <section className="map-workspace" aria-label="Manito barangay intelligence workspace">
+      <section className="map-workspace" aria-label="Manito Atlas workspace">
         {boundaryState.status === 'ready' ? (
           <MapView
             boundaries={boundaryState.data}
@@ -360,7 +360,7 @@ function MapState({
       <div className="map-state__message" role={status === 'error' ? 'alert' : 'status'}>
         {status === 'error' ? <AlertTriangle size={22} aria-hidden="true" /> : <span className="loading-orbit" aria-hidden="true" />}
         <span>
-          <small>{status === 'error' ? 'Map unavailable' : 'Preparing municipal atlas'}</small>
+          <small>{status === 'error' ? 'Map unavailable' : 'Preparing Manito Atlas'}</small>
           <strong>{status === 'error' ? 'Boundary layer could not be loaded.' : message}</strong>
           {status === 'loading' && <em>Loading PSA data by 10-digit PSGC…</em>}
           {status === 'error' && <em>{message}</em>}

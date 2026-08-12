@@ -1,6 +1,6 @@
-# Manito Barangay Intelligence Map
+# Manito Atlas
 
-A map-first civic data interface for the 15 barangays of Manito, Albay. It joins GADM 3.6 barangay geometry to Philippine Statistics Authority records using the 10-digit Philippine Standard Geographic Code (PSGC), with standard map, satellite, and 3D satellite terrain views rendered by MapLibre GL JS.
+A map-first civic atlas for the 15 barangays of Manito, Albay. It joins GADM 3.6 barangay geometry to Philippine Statistics Authority records using the 10-digit Philippine Standard Geographic Code (PSGC), with standard map, satellite, and 3D satellite terrain views rendered by MapLibre GL JS.
 
 ## Tech Stack
 
