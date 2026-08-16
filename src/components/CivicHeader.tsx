@@ -1,4 +1,5 @@
 import { BarChart3, Database, List, MapPinned, Search } from 'lucide-react'
+import { WeatherForecast } from './WeatherForecast'
 
 interface CivicHeaderProps {
   activePanel: 'overview' | 'barangays' | 'statistics' | 'data'
@@ -61,36 +62,30 @@ export function CivicHeader({
         ))}
       </nav>
 
-      <div className="header-context" aria-label="Location context">
-        <span className="context-dot" aria-hidden="true" />
-        <span>Albay</span>
-        <span className="context-separator">·</span>
-        <span>Bicol Region</span>
-        <span className="context-separator">·</span>
-        <span>PH</span>
-      </div>
-
-      <div className="mobile-header-actions">
-        <button
-          className={`mobile-search-button${isMobileSearchOpen ? ' is-active' : ''}`}
-          type="button"
-          onClick={onSearch}
-          aria-label={isMobileSearchOpen ? 'Close barangay search' : 'Search barangays'}
-          aria-expanded={isMobileSearchOpen}
-          title="Search barangays"
-        >
-          <Search size={18} strokeWidth={1.8} aria-hidden="true" />
-        </button>
-        <button
-          className="mobile-directory-button"
-          type="button"
-          onClick={onBarangays}
-          aria-label="Open barangay directory"
-          title="Open barangay directory"
-        >
-          <List size={17} strokeWidth={1.8} aria-hidden="true" />
-          <span>15 barangays</span>
-        </button>
+      <div className="header-utilities">
+        <WeatherForecast />
+        <div className="mobile-header-actions">
+          <button
+            className={`mobile-search-button${isMobileSearchOpen ? ' is-active' : ''}`}
+            type="button"
+            onClick={onSearch}
+            aria-label={isMobileSearchOpen ? 'Close barangay search' : 'Search barangays'}
+            aria-expanded={isMobileSearchOpen}
+            title="Search barangays"
+          >
+            <Search size={18} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+          <button
+            className="mobile-directory-button"
+            type="button"
+            onClick={onBarangays}
+            aria-label="Open barangay directory"
+            title="Open barangay directory"
+          >
+            <List size={17} strokeWidth={1.8} aria-hidden="true" />
+            <span>15 barangays</span>
+          </button>
+        </div>
       </div>
     </header>
   )

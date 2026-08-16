@@ -1,5 +1,5 @@
 import type { ExpressionSpecification, StyleSpecification } from '@maplibre/maplibre-gl-style-spec'
-import { Check, Layers3, Maximize2, Minus, Mountain, Plus, RotateCcw } from 'lucide-react'
+import { Check, Layers3, MapPin, Maximize2, Minus, Mountain, Plus, RotateCcw } from 'lucide-react'
 import {
   LngLatBounds,
   Map as MapLibreMap,
@@ -16,6 +16,9 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { attractionTagById } from '../data/attractionTags'
+import { fetchAttractions } from '../data/attractions'
 import { barangayByCode, barangays, formatDensity, formatPopulation } from '../data/barangays'
 import { mapViewOptions } from '../data/mapViews'
 import type {
@@ -24,6 +27,7 @@ import type {
   MapMode,
   MapViewMode,
   SelectionRequest,
+  TouristAttraction,
 } from '../types'
 
 setWorkerUrl(maplibreWorkerUrl)
@@ -42,6 +46,7 @@ interface MapViewProps {
 interface MarkerEntry {
   element: HTMLButtonElement
   marker: Marker
+  iconRoot?: Root
 }
 
 const palette = {
@@ -73,6 +78,10 @@ const sourceIds = {
 const EMPTY_FILTER_CODE = '__no_barangay__'
 const TERRAIN_PITCH = 58
 const TERRAIN_BEARING = -18
+const ATTRACTION_BANNER_URL = '/images/manito-attractions-banner.jpg'
+const BARANGAY_LABEL_OFFSETS: Partial<Record<string, [number, number]>> = {
+  '0500511003': [56, 0],
+}
 
 const blendHex = (start: string, end: string, amount: number) => {
   const from = start.replace('#', '')
@@ -412,6 +421,40 @@ const popupMarkup = (
   </div>`
 }
 
+const attractionPopupMarkup = (
+  attraction: TouristAttraction,
+  position: number,
+  total: number,
+) => {
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${attraction.latitude},${attraction.longitude}`
+  const tags = attraction.tags
+    .map((tag) => {
+      const label = tag === 'custom' && attraction.customTag
+        ? attraction.customTag
+        : attractionTagById.get(tag)?.label ?? tag
+      return `<span>${escapeMarkup(label)}</span>`
+    })
+    .join('')
+
+  return `<article class="attraction-card">
+  <div class="attraction-card__banner">
+    <img src="${ATTRACTION_BANNER_URL}" alt="" />
+    <div class="attraction-card__topline"><span>Places to visit</span><span>${String(position + 1).padStart(2, '0')} / ${total}</span></div>
+  </div>
+  <div class="attraction-card__body">
+    <strong>${escapeMarkup(attraction.name)}</strong>
+    <div class="attraction-card__place">${escapeMarkup(attraction.barangay)}</div>
+    <div class="attraction-card__tags">${tags}</div>
+    <div class="attraction-card__about">
+      <span>About the attraction</span>
+      <p>${escapeMarkup(attraction.description)}</p>
+    </div>
+    <a class="attraction-card__directions" href="${directionsUrl}" target="_blank" rel="noreferrer">How to get there? <span aria-hidden="true">↗</span></a>
+    <a class="attraction-card__directions attraction-card__contribute" href="${import.meta.env.BASE_URL}#contribute">Contribute a place <span aria-hidden="true">↗</span></a>
+  </div>
+</article>`
+}
+
 export function MapView({
   boundaries,
   selectedCode,
@@ -426,13 +469,19 @@ export function MapView({
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const popupRef = useRef<Popup | null>(null)
+  const attractionPopupRef = useRef<Popup | null>(null)
   const markersRef = useRef<Map<string, MarkerEntry>>(new Map())
+  const attractionMarkersRef = useRef<Map<string, MarkerEntry>>(new Map())
   const isReadyRef = useRef(false)
   const modeRef = useRef(mode)
   const viewRef = useRef(view)
   const selectedCodeRef = useRef(selectedCode)
   const onSelectRef = useRef(onSelect)
+  const showAttractionsRef = useRef(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showAttractions, setShowAttractions] = useState(false)
+  const [isAttractionPopupOpen, setIsAttractionPopupOpen] = useState(false)
+  const [attractions, setAttractions] = useState<TouristAttraction[]>([])
   const [hoveredCode, setHoveredCode] = useState<string | null>(null)
   const [mapError, setMapError] = useState<string | null>(null)
 
@@ -440,8 +489,33 @@ export function MapView({
   viewRef.current = view
   selectedCodeRef.current = selectedCode
   onSelectRef.current = onSelect
+  showAttractionsRef.current = showAttractions
+
+  useEffect(() => {
+    let cancelled = false
+    fetchAttractions()
+      .then((records) => {
+        if (!cancelled) setAttractions(records)
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) console.warn('Tourist attractions could not be loaded.', error)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const municipalBounds = useMemo(() => collectionBounds(boundaries), [boundaries])
+  const attractionBounds = useMemo(() => {
+    const bounds = new LngLatBounds(
+      municipalBounds.getSouthWest(),
+      municipalBounds.getNorthEast(),
+    )
+    attractions.forEach((attraction) => {
+      bounds.extend([attraction.longitude, attraction.latitude])
+    })
+    return bounds
+  }, [attractions, municipalBounds])
   const featureByCode = useMemo(
     () => new Map(boundaries.features.map((feature) => [feature.properties.psgcCode, feature])),
     [boundaries],
@@ -491,8 +565,33 @@ export function MapView({
       offset: 15,
     })
     popupRef.current = popup
+    const attractionPopup = new Popup({
+      closeButton: false,
+      closeOnClick: true,
+      className: 'attraction-map-popup',
+      maxWidth: '300px',
+      offset: 22,
+    })
+    attractionPopupRef.current = attractionPopup
+    let activeAttractionId: string | null = null
+
+    attractionPopup.on('close', () => {
+      activeAttractionId = null
+      setIsAttractionPopupOpen(false)
+    })
+
+    const clearBarangayHover = () => {
+      map.getCanvas().style.cursor = ''
+      setHoveredCode(null)
+      map.setFilter(layerIds.hover, ['==', ['get', 'psgcCode'], EMPTY_FILTER_CODE])
+      popup.remove()
+    }
 
     const handleMove = (event: MapLayerMouseEvent) => {
+      if (activeAttractionId !== null) {
+        popup.remove()
+        return
+      }
       const properties = event.features?.[0]?.properties as BoundaryProperties | undefined
       if (!properties || !barangayByCode.has(properties.psgcCode)) return
       map.getCanvas().style.cursor = 'pointer'
@@ -505,10 +604,7 @@ export function MapView({
     }
 
     const handleLeave = () => {
-      map.getCanvas().style.cursor = ''
-      setHoveredCode(null)
-      map.setFilter(layerIds.hover, ['==', ['get', 'psgcCode'], EMPTY_FILTER_CODE])
-      popup.remove()
+      clearBarangayHover()
     }
 
     const handleClick = (event: MapLayerMouseEvent) => {
@@ -521,7 +617,12 @@ export function MapView({
       applyThematicStyle(map, boundaries, modeRef.current, viewRef.current)
       applyBaseView(map, viewRef.current, false)
       map.setMaxBounds(expandedBounds(municipalBounds))
-      fitMunicipality(map, municipalBounds, viewRef.current, false)
+      fitMunicipality(
+        map,
+        showAttractionsRef.current ? attractionBounds : municipalBounds,
+        viewRef.current,
+        false,
+      )
 
       boundaries.features.forEach((feature) => {
         const record = barangayByCode.get(feature.properties.psgcCode)
@@ -543,10 +644,67 @@ export function MapView({
           event.stopPropagation()
           onSelectRef.current(record.psgcCode)
         })
-        const marker = new Marker({ element, anchor: 'center' })
+        const marker = new Marker({
+          element,
+          anchor: 'center',
+          offset: BARANGAY_LABEL_OFFSETS[record.psgcCode] ?? [0, 0],
+        })
           .setLngLat(geometryBounds(feature.geometry).getCenter())
           .addTo(map)
         markersRef.current.set(record.psgcCode, { element, marker })
+      })
+
+      attractions.forEach((attraction, position) => {
+        const element = document.createElement('button')
+        element.type = 'button'
+        element.className = `attraction-map-marker attraction-map-marker--${attraction.coordinateAccuracy}`
+        element.hidden = !showAttractionsRef.current
+        element.setAttribute(
+          'aria-label',
+          `${attraction.name}, ${attraction.barangay}, ${attraction.coordinateAccuracy} location. Show attraction details.`,
+        )
+
+        const pin = document.createElement('span')
+        pin.className = 'attraction-map-marker__pin'
+        pin.setAttribute('aria-hidden', 'true')
+        const iconRoot = createRoot(pin)
+        iconRoot.render(
+          <>
+            <MapPin size={38} strokeWidth={1.8} />
+            <span className="attraction-map-marker__ground" />
+          </>,
+        )
+
+        element.append(pin)
+
+        const showAttraction = () => {
+          activeAttractionId = attraction.id
+          setIsAttractionPopupOpen(true)
+          clearBarangayHover()
+          attractionPopup
+            .setLngLat([attraction.longitude, attraction.latitude])
+            .setHTML(attractionPopupMarkup(attraction, position, attractions.length))
+            .addTo(map)
+        }
+        const stopMapHover = (event: MouseEvent | PointerEvent) => {
+          event.stopPropagation()
+          clearBarangayHover()
+        }
+
+        element.addEventListener('pointermove', stopMapHover)
+        element.addEventListener('click', (event) => {
+          event.stopPropagation()
+          showAttraction()
+        })
+
+        const marker = new Marker({ element, anchor: 'bottom' })
+          .setLngLat([attraction.longitude, attraction.latitude])
+          .addTo(map)
+        attractionMarkersRef.current.set(attraction.id, {
+          element,
+          marker,
+          iconRoot,
+        })
       })
 
       map.on('mousemove', layerIds.fill, handleMove)
@@ -559,13 +717,20 @@ export function MapView({
     return () => {
       isReadyRef.current = false
       popup.remove()
+      attractionPopup.remove()
       markersRef.current.forEach(({ marker }) => marker.remove())
       markersRef.current.clear()
+      attractionMarkersRef.current.forEach(({ iconRoot, marker }) => {
+        marker.remove()
+        if (iconRoot) window.queueMicrotask(() => iconRoot.unmount())
+      })
+      attractionMarkersRef.current.clear()
       map.remove()
       mapRef.current = null
       popupRef.current = null
+      attractionPopupRef.current = null
     }
-  }, [boundaries, municipalBounds])
+  }, [attractionBounds, attractions, boundaries, municipalBounds])
 
   useEffect(() => {
     const map = mapRef.current
@@ -589,6 +754,21 @@ export function MapView({
       element.classList.toggle('is-selected', markerCode === selectedCode)
     })
   }, [selectedCode])
+
+  useEffect(() => {
+    attractionMarkersRef.current.forEach(({ element }) => {
+      element.hidden = !showAttractions
+    })
+    if (!showAttractions) {
+      attractionPopupRef.current?.remove()
+      return
+    }
+
+    const map = mapRef.current
+    if (map && isReadyRef.current) {
+      fitMunicipality(map, attractionBounds, viewRef.current, true)
+    }
+  }, [attractionBounds, showAttractions])
 
   useEffect(() => {
     const map = mapRef.current
@@ -625,7 +805,7 @@ export function MapView({
   return (
     <div
       ref={containerRef}
-      className={`map-canvas map-canvas--${view}`}
+      className={`map-canvas map-canvas--${view}${isAttractionPopupOpen ? ' has-attraction-popup' : ''}`}
       aria-label="Interactive map of Manito barangays"
     >
       <div ref={mapHostRef} className="maplibre-map" />
@@ -691,6 +871,25 @@ export function MapView({
           <Maximize2 size={17} strokeWidth={1.8} aria-hidden="true" />
         </button>
       </div>
+
+      <button
+        className={`attractions-toggle${showAttractions ? ' is-active' : ''}`}
+        type="button"
+        onClick={() => setShowAttractions((visible) => !visible)}
+        aria-label={`${showAttractions ? 'Hide' : 'Show'} ${attractions.length} tourist attractions`}
+        aria-pressed={showAttractions}
+        title={`${showAttractions ? 'Hide' : 'Show'} tourist attractions`}
+      >
+        <span className="attractions-toggle__icon">
+          <MapPin size={18} strokeWidth={1.8} aria-hidden="true" />
+          <b aria-hidden="true">{attractions.length}</b>
+        </span>
+        <span className="attractions-toggle__copy">
+          <small>Places to visit</small>
+          <strong>{showAttractions ? 'Attractions shown' : 'Show attractions'}</strong>
+        </span>
+        <span className="attractions-toggle__switch" aria-hidden="true"><i /></span>
+      </button>
 
       <MobileMapViewControl view={view} onChange={onViewChange} />
 

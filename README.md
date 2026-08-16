@@ -8,6 +8,7 @@ A map-first civic atlas for the 15 barangays of Manito, Albay. It joins GADM 3.6
 - **TypeScript 7.0.2** - Type safety and development experience
 - **Vite 8.2.1** - Build tool and development server
 - **MapLibre GL JS 6.3.0** - Interactive map rendering
+- **Supabase** - Moderated community attraction submissions
 - **Lucide React** - Icon library
 
 ## Development
@@ -16,8 +17,13 @@ A map-first civic atlas for the 15 barangays of Manito, Albay. It joins GADM 3.6
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
+
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local`.
+Only a publishable key belongs in the browser bundle; never add a Supabase
+secret or `service_role` key to a `VITE_` variable.
 
 The development server will start at `http://localhost:5173`
 
@@ -65,7 +71,10 @@ manito/
 │   │   └── StatisticsPanel.tsx          # Demographics and economy insights
 │   ├── data/
 │   │   ├── barangays.ts                # PSA PSGC + 2024 POPCEN data
-│   │   └── communityProfile.ts         # Demographics and economy indicators
+│   │   ├── communityProfile.ts         # Demographics and economy indicators
+│   │   └── communityAttractions.ts     # Approved-place reads and resident submissions
+│   ├── lib/
+│   │   └── supabase.ts                 # Publishable browser client
 │   ├── App.tsx                          # Main application component
 │   ├── Root.tsx                         # Landing/map routing and lazy loading
 │   ├── main.tsx                         # Application entry point
@@ -74,6 +83,8 @@ manito/
 ├── package.json                         # Dependencies and scripts
 ├── tsconfig.json                        # TypeScript configuration
 └── vite.config.ts                       # Vite build configuration
+supabase/
+└── migrations/                          # RLS-protected database schema
 ```
 
 ## Data Architecture
@@ -113,6 +124,8 @@ Barangay boundaries are indicative, not legal survey or cadastral lines. Geometr
 
 ### Interactive Elements
 - **Civic landing page**: Real boundary preview, municipal snapshot, methodology, and linked provenance ledger
+- **Tourist attractions**: Optional, toggleable pins for 10 destinations with barangay, coordinate-confidence, and source details
+- **Resident contributions**: A moderated form for Manito residents with `resto`, `beach`, `nature`, `hot-spring`, `heritage`, `stay`, `shop`, `activity`, `viewpoint`, and resident-defined custom tags
 - **Deep map entry**: Open the full workspace or jump directly from the landing-page index to a barangay record
 - **Barangay Selection**: Click, tap, or keyboard navigation to select barangays
 - **Search**: Quick search functionality with keyboard shortcut (Cmd/Ctrl+K)
@@ -138,5 +151,39 @@ Barangay boundaries are indicative, not legal survey or cadastral lines. Geometr
 - Switch among boundary, population, classification, and calculated-density lenses
 - Explore Population, Demographics, and Economy tabs with source-linked indicators and visible reference years
 - Desktop drawer and mobile bottom-sheet detail treatments
+
+## Community Attraction Moderation
+
+New form entries are stored as `pending`. RLS prevents pending or rejected rows
+from being read publicly, prevents public clients from self-approving a row, and
+keeps submitter names and contact details private even after approval.
+
+To publish a verified place in the Supabase dashboard:
+
+1. Open `attraction_submissions` and review the field note and private contact.
+2. Add valid `latitude` and `longitude` values and, when available, a source URL.
+3. Set the coordinate accuracy and note, then change `status` to `approved` and
+   fill `reviewed_at`.
+4. The approved record will load automatically in the map attractions layer.
+
+The approved-coordinate database constraint prevents publication without a map
+position. Apply the committed migration in `supabase/migrations` to reproduce the
+schema in another project.
+
+The admin dashboard is maintained as an independent project in [`admin/`](admin/README.md).
+
+## Website Audience Metrics
+
+The public site records a random browser identifier in Supabase at most once per
+Manila calendar day. It does not store visitor email addresses or IP addresses.
+The admin overview reports:
+
+- Daily users: unique browsers today
+- Weekly users: unique browsers in the rolling last 7 days
+- Monthly users: unique browsers in the rolling last 30 days
+
+The source records and stored aggregate snapshots are protected by RLS. Public
+clients can record a visit but cannot read visitor records or audience totals;
+the totals are returned only through the authenticated admin API.
 
 This project is an independent civic interface prototype and is not an official Philippine government website.

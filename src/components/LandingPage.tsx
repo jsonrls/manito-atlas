@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState, type CSSProperties } from 'react'
 import type { Geometry, Position } from 'geojson'
+import { AttractionSubmission } from './AttractionSubmission'
 import {
   barangayByCode,
   barangays,
@@ -222,6 +223,7 @@ export function LandingPage({ onOpenMap, onPrefetchMap }: LandingPageProps) {
           <nav className="landing-nav__links" aria-label="Landing">
             <a href="#figures">Figures</a>
             <a href="#method">Method</a>
+            <a href="#contribute">Contribute</a>
             <a href="#sources">Sources</a>
           </nav>
 
@@ -465,10 +467,12 @@ export function LandingPage({ onOpenMap, onPrefetchMap }: LandingPageProps) {
           </div>
         </section>
 
+        <AttractionSubmission />
+
         <section className="landing-sources" id="sources" aria-labelledby="sources-heading">
           <div className="landing-shell landing-sources__grid">
             <div>
-              <p className="landing-kicker landing-kicker--on-ink">04 · Sources</p>
+              <p className="landing-kicker landing-kicker--on-ink">05 · Sources</p>
               <h2 id="sources-heading">Open the folio, then read the footnotes.</h2>
               <p>
                 This is an independent civic interface. It is not an official

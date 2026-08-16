@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { LandingPage } from './components/LandingPage'
+import { recordWebsiteVisit } from './data/websiteAnalytics'
 
 type Experience = 'landing' | 'map'
 
@@ -14,6 +15,10 @@ function experienceFromLocation(): Experience {
 
 export default function Root() {
   const [experience, setExperience] = useState<Experience>(experienceFromLocation)
+
+  useEffect(() => {
+    void recordWebsiteVisit()
+  }, [])
 
   useEffect(() => {
     const handlePopState = () => setExperience(experienceFromLocation())

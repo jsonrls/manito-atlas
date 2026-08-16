@@ -48,7 +48,7 @@ function App({ initialBarangayCode, onOpenLanding }: AppProps) {
   )
   const [fitRequest, setFitRequest] = useState(0)
   const [mode, setMode] = useState<MapMode>('default')
-  const [view, setView] = useState<MapViewMode>('map')
+  const [view, setView] = useState<MapViewMode>('satellite')
   const [insightSection, setInsightSection] = useState<InsightSection>('population')
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isMobileModeSheetOpen, setIsMobileModeSheetOpen] = useState(false)
