@@ -4,6 +4,7 @@ import {
   ExternalLink,
   Layers3,
   MapPinned,
+  Menu,
   Search,
 } from 'lucide-react'
 import { useEffect, useState, type CSSProperties } from 'react'
@@ -237,6 +238,35 @@ export function LandingPage({ onOpenMap, onPrefetchMap }: LandingPageProps) {
             Open the map
             <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
           </button>
+
+          <details className="landing-mobile-menu">
+            <summary aria-label="Open navigation menu">
+              <Menu size={22} strokeWidth={1.8} aria-hidden="true" />
+            </summary>
+            <nav
+              className="landing-mobile-menu__panel"
+              aria-label="Mobile landing navigation"
+              onClick={(event) => {
+                if ((event.target as Element).closest('a, button')) {
+                  event.currentTarget.closest('details')?.removeAttribute('open')
+                }
+              }}
+            >
+              <a href="#figures">Figures</a>
+              <a href="#method">Method</a>
+              <a href="#contribute">Contribute</a>
+              <a href="#sources">Sources</a>
+              <button
+                type="button"
+                onClick={() => onOpenMap()}
+                onPointerEnter={onPrefetchMap}
+                onFocus={onPrefetchMap}
+              >
+                Open the map
+                <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
+              </button>
+            </nav>
+          </details>
         </div>
       </header>
 
