@@ -12,20 +12,20 @@ export interface MapViewOption {
 
 export const mapViewOptions: MapViewOption[] = [
   {
-    id: 'map',
-    label: 'Map',
-    shortLabel: 'Map',
-    description: 'Civic basemap with administrative context.',
-    sheetSummary: 'Civic',
-    icon: MapIcon,
-  },
-  {
     id: 'satellite',
     label: 'Satellite',
     shortLabel: 'Satellite',
     description: 'Satellite imagery with the GADM barangay boundaries.',
     sheetSummary: 'Imagery',
     icon: Satellite,
+  },
+  {
+    id: 'map',
+    label: 'Map',
+    shortLabel: 'Map',
+    description: 'Civic basemap with administrative context.',
+    sheetSummary: 'Civic',
+    icon: MapIcon,
   },
   {
     id: 'satellite-3d',

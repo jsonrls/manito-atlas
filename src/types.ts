@@ -32,6 +32,34 @@ export interface BoundaryProperties {
   gadmId: string
 }
 
+export type AttractionTag =
+  | 'resto'
+  | 'beach'
+  | 'nature'
+  | 'hot-spring'
+  | 'heritage'
+  | 'stay'
+  | 'shop'
+  | 'activity'
+  | 'viewpoint'
+  | 'custom'
+
+export interface TouristAttraction {
+  id: string
+  name: string
+  tags: AttractionTag[]
+  customTag?: string
+  barangay: string
+  description: string
+  locationDetails?: string
+  latitude: number
+  longitude: number
+  coordinateAccuracy: 'verified' | 'approximate' | 'provisional'
+  coordinateNote: string
+  sourceLabel: string
+  sourceUrl: string
+}
+
 export type ManitoBoundaryCollection = FeatureCollection<Geometry, BoundaryProperties>
 
 export interface SelectionRequest {
