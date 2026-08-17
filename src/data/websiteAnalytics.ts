@@ -30,3 +30,11 @@ export async function recordWebsiteVisit(): Promise<void> {
     console.warn('Website visit could not be recorded:', error.message)
   }
 }
+
+export function clearWebsiteAnalyticsIdentity(): void {
+  try {
+    window.localStorage.removeItem(visitorStorageKey)
+  } catch {
+    // Browser storage can be unavailable in restricted privacy modes.
+  }
+}

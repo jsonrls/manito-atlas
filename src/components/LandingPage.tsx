@@ -30,6 +30,9 @@ import type { ManitoBoundaryCollection } from '../types'
 interface LandingPageProps {
   onOpenMap: (barangayCode?: string) => void
   onPrefetchMap?: () => void
+  onOpenCookieSettings: () => void
+  onOpenPrivacy: () => void
+  onOpenTerms: () => void
 }
 
 interface AtlasShape {
@@ -176,7 +179,13 @@ const sources = [
   },
 ] as const
 
-export function LandingPage({ onOpenMap, onPrefetchMap }: LandingPageProps) {
+export function LandingPage({
+  onOpenCookieSettings,
+  onOpenMap,
+  onOpenPrivacy,
+  onOpenTerms,
+  onPrefetchMap,
+}: LandingPageProps) {
   const [atlasShapes, setAtlasShapes] = useState<AtlasShape[]>([])
   const [activeBarangay, setActiveBarangay] = useState<string | null>(null)
   const activeRecord = activeBarangay
@@ -537,6 +546,21 @@ export function LandingPage({ onOpenMap, onPrefetchMap }: LandingPageProps) {
           <footer className="landing-footer">
             <div className="landing-shell landing-footer__inner">
               <span>Manito · Albay · Bicol Region · PH</span>
+              <nav aria-label="Legal and privacy">
+                <a
+                  href="?page=privacy"
+                  onClick={(event) => { event.preventDefault(); onOpenPrivacy() }}
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  href="?page=terms"
+                  onClick={(event) => { event.preventDefault(); onOpenTerms() }}
+                >
+                  Terms & Conditions
+                </a>
+                <button type="button" onClick={onOpenCookieSettings}>Cookie Settings</button>
+              </nav>
               <span>GADM academic / non-commercial geometry · PSA public statistics</span>
             </div>
           </footer>
